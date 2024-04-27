@@ -31,11 +31,8 @@ while True:
         print(packet)
         time.sleep(0.5)
 
-    # Swap bytes at positions 12-15 with bytes at positions 16-19 in the packet array
-    #packet[12:16], packet[16:20] = packet[16:20], packet[12:16]
-
     # Print the content of the packet array after the swap operation
-    print('Packet after byte swap:', packet)
+    print('Raw packet:', packet)
 
     # Write the modified packet into the TUN device.
     os.write(tun.fileno(), bytes(packet))

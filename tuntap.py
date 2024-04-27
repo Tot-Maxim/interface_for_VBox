@@ -1,6 +1,5 @@
 import unittest
 import struct
-
 import subprocess
 import sys
 import socket
@@ -124,9 +123,7 @@ class Tap(object):
         else:
             ifr_name = b'\x00' * 16
         ifr = struct.pack('16sH22s', ifr_name, flags, b'\x00' * 22)
-        # print(ifr)
         ret = fcntl.ioctl(tun, TUNSETIFF, ifr)
-        # print(ret,len(ret),ifr)
         logging.debug("%s %s" % (ifr, ret))
         dev, _ = struct.unpack('16sH', ret[:18])
         dev = dev.decode().strip("\x00")
@@ -155,7 +152,7 @@ class Tap(object):
                     return
         return int(maskbits)
 
-    def config(self, ip, mask, gateway="0.0.0.0"):
+    def config(self, ip, mask, gateway="192.168.1.1"):
         '''
         config device's ip and mask
 
@@ -185,23 +182,10 @@ class Tap(object):
 
     def close(self):
 
-        '''
-        close device
-
-        input:
-            None
-
-        return :
-            None
-
-        '''
-
         self.quitting = False
-        # print(self.name)
         os.close(self.handle)
         try:
             mode_name = 'tun' if self.nic_type == "Tun" else 'tap'
-            # print('ip tuntap delete mode '+ mode_name + " "+ self.name)
             subprocess.check_call(
                 'ip addr delete ' + self.ip + '/%d ' % self._get_maskbits(self.mask) + " dev " + self.name, shell=True)
             subprocess.check_call('ip tuntap delete mode ' + mode_name + " " + self.name, shell=True)
@@ -212,20 +196,9 @@ class Tap(object):
         pass
 
     def read(self, size=1522):
-        '''
-        read device data with given size
-
-        input:
-            size:  read max size , int . such as size = 1500
-
-        return :
-            bytes:
-
-        '''
-
         self.read_lock.acquire()
         # data = os.read(self.handle,size)
-        path_dir = '/media/sf_FilePack/data_file.txt'
+        path_dir = '/home/oem/PycharmProjects/interface_for_VBox/data_file.txt'
         with open(path_dir, 'rb') as file:
             data = file.read()
             time.sleep(1)
@@ -316,7 +289,7 @@ class WinTap(Tap):
 
     def _getNameByMac(self, mac):
         result = subprocess.check_output("ipconfig/all", shell=True).decode("gbk").encode().decode()
-        res = result.split("适配器")
+        res = result.split("адаптер")
         for i in range(1, len(res)):
             if res[i].find(self._mac2string(mac)) > 0:
                 return res[i].split(":")[0].strip()
@@ -333,7 +306,7 @@ class WinTap(Tap):
         else:
             return None
 
-    def config(self, ip, mask, gateway="0.0.0.0"):
+    def config(self, ip, mask, gateway="192.168.1.1"):
         self.ip = ip
         self.mask = mask
         self.gateway = gateway
@@ -359,7 +332,7 @@ class WinTap(Tap):
         sargs = sargs.replace("NAME", "\"%s\"" % self.name)
         sargs = sargs.replace("ADDRESS", self.ip)
         sargs = sargs.replace("MASK", self.mask)
-        if self.gateway == "0.0.0.0":
+        if self.gateway == "192.168.1.1":
             sargs = sargs.replace("gateway=GATEWAY", "")
         else:
             sargs = sargs.replace("GATEWAY", self.gateway)
@@ -421,11 +394,10 @@ class Test(unittest.TestCase):
                 continue
             # print('packet:',"".join('{:02x} '.format(x) for x in packet.data))
 
-            ####
-
     def testTap(self):
         tap = TunTap(nic_type="Tap", nic_name="tap0")
-        tap.config("192.168.2.82", "255.255.255.0")
+        tap.config("192.168.1.2", "255.255.255.0")
+
         print(tap.name)
         start_new_thread(self.readtest, (tap,))
         s = input("press any key to quit!")
@@ -436,7 +408,7 @@ class Test(unittest.TestCase):
 
     def testTun(self):
         tap = TunTap(nic_type="Tun", nic_name="tun0")
-        tap.config("192.168.2.82", "255.255.255.0")
+        tap.config("192.168.1.3", "255.255.255.0")
         print(tap.name)
         start_new_thread(self.readtest, (tap,))
         s = input("press any key to quit!")
