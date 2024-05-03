@@ -1,7 +1,7 @@
 import socket
 
 # Server configuration
-server_ip = '0.0.0.0'  # Server listens on all available network interfaces
+server_ip = '192.168.1.2'  # Server listens on all available network interfaces
 server_port = 12345
 
 # Create a socket object
