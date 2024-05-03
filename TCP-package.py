@@ -129,33 +129,15 @@ class Tap(object):
         return data
         pass
 
-    # def write_tun(tun_path, data='Hello world!'):
-    #     result = 0
-    #     tun = open(tun_path, 'r+b', buffering=0)
-    #
-    #     try:
-    #         result = os.write(tun.fileno(), bytes(data))
-    #     except:
-    #         print('except')
-    #
-    #     return result
-
 
 tap = TunTap(nic_type="Tap", nic_name="tap0")
 tap.config("192.168.1.3", "255.255.255.0")
-tun = open('/dev/net/tun', 'r+b', buffering=0)
 subprocess.check_call('ifconfig tap0 192.168.1.1 pointopoint 192.168.1.1 up', shell=True)
 
 while not tap.quitting:
     # Получаем путь директории, в которой запущен файл Python
     current_dir = os.path.dirname(os.path.abspath(__file__))
     path_dir = os.path.join(current_dir, 'data_file.txt')
-
-    with open(path_dir, 'rb') as file:
-        packet = file.read()
-        time.sleep(0.5)
-
-    os.write(tun.fileno(), bytes(packet))
 
     p = tap.read()
     print("raw_read_data:", ''.join('{:02x} '.format(x) for x in p))

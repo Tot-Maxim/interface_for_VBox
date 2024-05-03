@@ -4,33 +4,34 @@ import struct
 import subprocess
 import time
 
-
-# Some constants used to ioctl the device file. I got them by a simple C program.
+# Некоторые константы, используемые для ioctl файла устройства. Я получил их с помощью простой программы на Cи
 TUNSETIFF = 0x400454ca
 TUNSETOWNER = TUNSETIFF + 2
 IFF_TUN = 0x0001
 IFF_TAP = 0x0002
 IFF_NO_PI = 0x1000
 
-# Open file corresponding to the TUN device in read/write binary mode with no buffering.
+# Открытие файла, соответствующего устройству TUN, в двоичном режиме чтения/записи без буферизации.
 tun = open('/dev/net/tun', 'r+b', buffering=0)
 ifr = struct.pack('16sH', b'tap0', IFF_TAP | IFF_NO_PI)
 fcntl.ioctl(tun, TUNSETIFF, ifr)
 fcntl.ioctl(tun, TUNSETOWNER, 1000)
 
-# Bring it up and assign addresses.
+# Поднятие tap0 и назначение адреса
 subprocess.check_call('ifconfig tap0 192.168.1.1 pointopoint 192.168.1.1 up', shell=True)
-path_dir = '/home/oem/PycharmProjects/virtual_interface/data_file.txt'
+# current_dir = os.path.dirname(os.path.abspath(__file__))
+current_dir = '/media/sf_FilePack'
+path_dir = os.path.join(current_dir, 'data_file.txt')
 
 while True:
-    # Create a NumPy array filled with values from 0 to 29 for testing purposes.
     with open(path_dir, 'rb') as file:
         packet = file.read()
-        print(packet)
-        time.sleep(0.5)
 
-    # Print the content of the packet array after the swap operation
-    print('Packet raw:', packet)
+    # Вывод содержимое массива пакетов после операции чтения
+    print("raw_read_data:", ''.join('{:02x} '.format(x) for x in packet))
 
-    # Write the modified packet into the TUN device.
-    #os.write(tun.fileno(), bytes(packet))
+    os.write(tun.fileno(), bytes(packet))
+    # Вывод содержимое массива пакетов после операции записи
+    # print("raw_send_data:", ''.join('{:02x} '.format(x) for x in packet))
+
+    time.sleep(2.5)
