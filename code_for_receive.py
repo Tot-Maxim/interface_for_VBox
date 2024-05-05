@@ -29,7 +29,7 @@ fcntl.ioctl(tun, TUNSETIFF, ifr)
 fcntl.ioctl(tun, TUNSETOWNER, 1000)
 
 # Поднятие tap0 и назначение адреса
-subprocess.check_call('ifconfig tap0 10.1.1.8 pointopoint 10.1.1.8 up', shell=True)
+subprocess.check_call('ifconfig tap0 10.1.1.8 pointopoint 10.1.1.7 up', shell=True)
 
 
 class bcolors:
@@ -68,38 +68,59 @@ class AtomicWrite():
             os.chmod(self.path, 0o664)
         else:
             os.unlink(self.temp_file.name)
+            print(bcolors.FAIL + "Break")
 
 
 def write_packet_to_file(packet, file_path):
-    with AtomicWrite(path_dir, 'wb') as file:
-        for x in packet:
-            file.write(bytes([x]))
+    directory = os.path.dirname(file_path)
+    flag_file = os.path.join(directory, 'flag_to_host.txt')
+
+    if not os.path.exists(flag_file):
+        try:
+            with AtomicWrite(file_path, 'wb') as file:
+                for x in packet:
+                    file.write(bytes([x]))
+                # Вывод содержимого массива пакетов после операции записи
+                print(bcolors.WARNING + "raw_write_data:" + bcolors.ENDC,
+                      ''.join('{:02x} '.format(x) for x in TCP_packet))
+
+            # Создаем файл-флаг после успешной записи
+            open(flag_file, 'w').close()
+        except Exception as e:
+            print(bcolors.FAIL + "Failed to write data. Retrying in 0.1 seconds...")
+            time.sleep(0.1)
+    else:
+        pass
 
 
 def read_packet_to_file(path_dir):
-    with open(path_dir, 'rb') as file:
-        packet = file.read()
-        print( bcolors.OKGREEN + "raw_read_data:" + bcolors.ENDC, ''.join('{:02x} '.format(x) for x in packet))
-    return packet
+    directory = os.path.dirname(path_dir)
+    flag_file = os.path.join(directory, 'flag_to_vb.txt')
+
+    if os.path.exists(flag_file):
+        os.remove(flag_file)
+        with open(path_dir, 'rb') as file:
+            packet = file.read()
+            os.write(tun.fileno(), bytes(packet))
+            print(bcolors.OKGREEN + "raw_read_data:" + bcolors.ENDC, ''.join('{:02x} '.format(x) for x in packet))
+        return packet
+    else:
+        print(bcolors.FAIL + "Flag file does not exist. Skipping reading.")
+        return None
 
 
 last_read_time = 0
 while True:
     current_dir = '/media/sf_FilePack'
-    path_dir = os.path.join(current_dir, 'data_file_from_host_to_vb.txt')
+    path_dir = os.path.join(current_dir, 'data_file.txt')
     current_time = os.path.getmtime(path_dir)
 
     if current_time != last_read_time:
-
         last_read_time = current_time
         packet = read_packet_to_file(path_dir)
-        os.write(tun.fileno(), bytes(packet))
     else:
-        try:
-            TCP_packet = array('B', os.read(tun.fileno(), 2048))
-            print(bcolors.WARNING + "raw_write_data:" + bcolors.ENDC, ''.join('{:02x} '.format(x) for x in TCP_packet))
-            path_dir = os.path.join(current_dir, 'data_file_from_vb_to_host.txt')
-            write_packet_to_file(TCP_packet, path_dir)
-        except:
-            pass
-    #time.sleep(0.1)
+        TCP_packet = array('B', os.read(tun.fileno(), 2048))
+        path_dir = os.path.join(current_dir, 'data_file_from_vb_to_host.txt')
+        write_packet_to_file(TCP_packet, path_dir)
+
+    time.sleep(0.1)
