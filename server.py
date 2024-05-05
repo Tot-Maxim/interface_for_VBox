@@ -1,8 +1,13 @@
 import socket
+import subprocess
+
+# subprocess.check_call('ip tuntap add tap0 mode tap', shell=True)
+# subprocess.check_call('ip link set tap0 up', shell=True)
+# subprocess.check_call('ip addr add 10.1.1.8/255.255.255.0 dev tap0', shell=True)
 
 # Server configuration
-server_ip = '192.168.1.2'  # Server listens on all available network interfaces
-server_port = 12345
+server_ip = '10.1.1.8'  # Server listens on all available network interfaces
+server_port = 5050
 
 # Create a socket object
 server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
