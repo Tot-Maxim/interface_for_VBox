@@ -4,8 +4,7 @@ import fcntl
 import os
 import struct
 import subprocess
-from watchdog.observers import Observer
-from watchdog.events import FileSystemEventHandler
+
 
 current_dir = '/media/sf_FilePack'
 
@@ -28,14 +27,6 @@ fcntl.ioctl(tun, TUNSETOWNER, 1000)
 
 # Поднятие tap0 и назначение адреса
 subprocess.check_call('ifconfig tap0 10.1.1.8 pointopoint 10.1.1.7 up', shell=True)
-
-
-class MyHandler(FileSystemEventHandler):
-    def on_modified(self, event):
-        if event.src_path.endswith("from_host.docx"):
-            print(f"{event.src_path} has been modified")
-            path_dir = os.path.join(current_dir, 'from_host.docx')
-            read_packet_to_file(path_dir)
 
 
 class bcolors:
@@ -72,36 +63,28 @@ def read_packet_to_file(path_dir):
 
 
 if __name__ == "__main__":
-    event_handler = MyHandler()
-    observer = Observer()
-    observer.schedule(event_handler, path=current_dir, recursive=False)
-    observer.start()
-    try:
-        while True:
-            print('1',state)
-            if state == 1:
-                from_TCP = array('B', os.read(tun.fileno(), 2048))
-                if from_TCP:
-                    state = 2
-            print('2',state)
-            if state == 2:
-                path_dir = os.path.join(current_dir, 'from_virtual.docx')
-                state = write_packet_to_file(from_TCP, path_dir)
-            print('3',state)
-            if state == 3:
-                path_dir = os.path.join(current_dir, 'from_host.docx')
-                to_TCP = read_packet_to_file(path_dir)
-                if to_TCP:
-                    state = 4
-                else:
-                    state = 1
-            print('4',state)
-            if state == 4:
-                os.write(tun.fileno(), bytes(to_TCP))
+    while True:
+        print('1',state)
+        if state == 1:
+            from_TCP = array('B', os.read(tun.fileno(), 2048))
+            if from_TCP:
+                state = 2
+        print('2',state)
+        if state == 2:
+            path_dir = os.path.join(current_dir, 'from_virtual.docx')
+            state = write_packet_to_file(from_TCP, path_dir)
+        print('3',state)
+        if state == 3:
+            path_dir = os.path.join(current_dir, 'from_host.docx')
+            to_TCP = read_packet_to_file(path_dir)
+            if to_TCP:
+                state = 4
+            else:
                 state = 1
-            time.sleep(0.1)
-    except KeyboardInterrupt:
-        observer.stop()
-    observer.join()
+        print('4',state)
+        if state == 4:
+            os.write(tun.fileno(), bytes(to_TCP))
+            state = 1
+        time.sleep(0.1)
 
 tun.close()
