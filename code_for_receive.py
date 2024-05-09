@@ -8,8 +8,10 @@ import subprocess
 import threading
 
 CURRENT_DIR = '/media/sf_FilePack'
-
-# Некоторые константы
+file_from_virtual = 'from_virtual'
+file_from_host = 'from_host'
+DST_IP = '10.1.1.7'
+SRC_IP = '10.1.1.8'
 TUNSETIFF = 0x400454ca
 TUNSETOWNER = TUNSETIFF + 2
 IFF_TUN = 0x0001
@@ -20,7 +22,7 @@ temp_read = b''
 temp_write = b''
 ast_read_time = 0
 read_lock = threading.Lock()
-packet = Ether(dst="0a:1a:de:3c:f0:5d", src="0a:1a:de:3c:f0:5d") / IP(dst="10.1.1.7", src="10.1.1.8") / ICMP(type="echo-request") / Raw(load='Check connect to host')
+PACK = Ether(dst="0a:1a:de:3c:f0:5d", src="0a:1a:de:3c:f0:5d") / IP(dst=DST_IP, src=SRC_IP) / ICMP(type="echo-request") / Raw(load='Check connect to host')
 
 # Открытие файла, соответствующего устройству TUN, в двоичном режиме чтения/записи без буферизации.
 tun = open('/dev/net/tun', 'r+b', buffering=0)
@@ -29,7 +31,7 @@ fcntl.ioctl(tun, TUNSETIFF, ifr)
 fcntl.ioctl(tun, TUNSETOWNER, 1000)
 
 # Поднятие tap0 и назначение адреса
-subprocess.check_call('ifconfig tap0 10.1.1.8 pointopoint 10.1.1.7 up', shell=True)
+subprocess.check_call(f'ifconfig tap0 {SRC_IP} pointopoint {DST_IP} up', shell=True)
 
 
 class bcolors:
@@ -68,6 +70,11 @@ def write_packet_to_file(packet, file_path):
 
 def read_packet_to_file(path_dir):
     global temp_read
+
+    if not os.path.exists(path_dir):
+        print('Server not found')
+        return True
+
     with open(path_dir, 'rb+') as file:
         content = file.read()
         index = content.find(b'\t0t')
@@ -92,7 +99,6 @@ def read_packet_to_file(path_dir):
 
 if __name__ == "__main__":
     while True:
-        print('1', state)
         if state == 1:
             try:
                 read_lock.acquire()
@@ -106,20 +112,18 @@ if __name__ == "__main__":
                         print("Error reading from tap")
                         break
                     if time.time() > timeout:
-                        sendp(packet, iface="tap0")
+                        sendp(PACK, iface="tap0")
                         break
             finally:
                 read_lock.release()
             if from_TCP:
                 state = 2
-        print('2', state)
         if state == 2:
-            path_dir = os.path.join(CURRENT_DIR, 'from_virtual.docx')
+            path_dir = os.path.join(CURRENT_DIR, file_from_virtual)
             if write_packet_to_file(from_TCP, path_dir):
                 state = 3
-        print('3', state)
         if state == 3:
-            path_dir = os.path.join(CURRENT_DIR, 'from_host.docx')
+            path_dir = os.path.join(CURRENT_DIR, file_from_host)
             if read_packet_to_file(path_dir):
                 state = 1
 
