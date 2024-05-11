@@ -1,4 +1,5 @@
 import os
+from tkinter import *
 from socket import *
 from struct import unpack
 
@@ -56,9 +57,18 @@ class ServerProtocol:
         self.socket = None
 
 
-if __name__ == '__main__':
+def start_server():
     print('START SERVER')
     sp = ServerProtocol()
     sp.listen(ip_address, TCP_port)
     print(f'Server listen {ip_address, TCP_port}')
     sp.handle_images()
+
+window = Tk()
+window.geometry("820x450")
+window.configure(background='black')
+
+start_button = Button(window, text='Start server', command=start_server, bg='white', fg='black')
+start_button.pack()
+
+window.mainloop()

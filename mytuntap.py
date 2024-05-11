@@ -2,7 +2,6 @@ import fcntl
 import os
 import struct
 import subprocess
-import time
 
 # Объявление глобальных переменных
 DST_IP = '10.1.1.7'
@@ -37,48 +36,44 @@ class TAP_Manager:
         subprocess.check_call(f'ifconfig tap0 {self.src_ip} pointopoint {self.dst_ip} up', shell=True)
         return self.tun_in
 
-    def write_packet_to_file(self, packet, file_path):
-        lock_file_path = file_path + '.lock'  # Путь к файлу-блокировке
+    def read_from_TCP(self, tap_lock, current_dir, file_path):
+        path_dir = os.path.join(current_dir, file_path)
 
-        for _ in range(2):
+        while True:
             try:
-                with open(lock_file_path, 'w') as lock_file:
-                    #fcntl.flock(lock_file, fcntl.LOCK_EX)  # Получаем эксклюзивную блокировку файла
+                print('TCP start')
+                from_TCP = os.read(self.tun_in.fileno(), 1522)
+                print('TCP END')
+            except OSError:
+                print("Error reading from tap")
+            else:
+                with open(path_dir, 'ab+') as file:
+                    try:
+                        tap_lock.acquire()
+                        fcntl.lockf(file, fcntl.LOCK_EX | fcntl.LOCK_NB)
+                        file.write(from_TCP)
+                        print(bcolors.OKGREEN + 'Записанные данные в {path_dir}: ' + bcolors.ENDC,
+                              ''.join('{:02x} '.format(x) for x in from_TCP))
+                    finally:
+                        fcntl.lockf(file, fcntl.LOCK_UN)
+                        tap_lock.release()
 
-                    with open(file_path, 'ab+') as file:
-                        file.write(packet)
-                        file.write(b'\t0t')
-                        print(bcolors.WARNING + f'Write data from {file_path}: ' + bcolors.ENDC,
-                              ''.join('{:02x} '.format(x) for x in packet))
-                #fcntl.flock(lock_file, fcntl.LOCK_UN)  # Снимаем блокировку с файла
-            except:
-                continue
-            finally:
-                if os.path.exists(lock_file_path):
-                    os.remove(lock_file_path)
-                    return True
-        return False
+    def read_from_file(self, tap_lock, current_dir, file_path):
+        path_dir = os.path.join(current_dir, file_path)
 
-    def read_packet(self, path_dir):
-        global temp_read  # Объявление глобальной переменной temp_read
-
-        if not os.path.exists(path_dir):
-            print(bcolors.FAIL + 'Server not found' + bcolors.ENDC)
-            return True
-
-        with open(path_dir, 'rb+') as file:
-            content = file.read()
-            index = content.find(b'\t0t')  # Находим индекс разделителя пакетов
-
-            if index != -1:  # Если индекс не равен -1 (разделитель найден)
-                to_TCP = content[:index]  # Отрезок с данными для TCP до разделителя
-                after_content = content[index + 3:]  # Оставшиеся данные после разделителя
-                print(bcolors.OKGREEN + f'Read_data in {path_dir}:' + bcolors.ENDC,
-                      ''.join('{:02x} '.format(x) for x in to_TCP))
-                os.write(self.tun_in.fileno(), bytes(to_TCP))
+        while True:
+            with open(path_dir, 'rb+') as file:
+                content = file.read()
                 file.seek(0)
                 file.truncate()
-                file.write(after_content)
-                return False
-            else:
-                return True
+
+            if content:
+                try:
+                    print(bcolors.WARNING + f'Read data from {path_dir}:' + bcolors.ENDC,
+                          ' '.join('{:02x}'.format(x) for x in content))
+                    tap_lock.acquire()
+                    os.write(self.tun_in.fileno(), bytes(content))
+                except OSError as e:
+                    print(f"Error writing to tap: {e}")
+                finally:
+                    tap_lock.release()
