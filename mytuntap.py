@@ -41,11 +41,9 @@ class TAP_Manager:
 
         while True:
             try:
-                print('TCP start')
                 from_TCP = os.read(self.tun_in.fileno(), 1522)
-                print('TCP END')
-            except OSError:
-                print("Error reading from tap")
+            except OSError as e:
+                print(bcolors.FAIL + f"Error writing to tap: {e}" + bcolors.ENDC)
             else:
                 with open(path_dir, 'ab+') as file:
                     try:
@@ -74,6 +72,6 @@ class TAP_Manager:
                     tap_lock.acquire()
                     os.write(self.tun_in.fileno(), bytes(content))
                 except OSError as e:
-                    print(f"Error writing to tap: {e}")
+                    print(bcolors.FAIL + f"Error writing to tap: {e}" + bcolors.ENDC)
                 finally:
                     tap_lock.release()
