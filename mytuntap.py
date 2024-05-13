@@ -2,6 +2,7 @@ import fcntl
 import os
 import struct
 import subprocess
+import time
 
 # Объявление глобальных переменных
 DST_IP = '10.1.1.7'
@@ -41,7 +42,9 @@ class TAP_Manager:
 
         while True:
             try:
+                print('START TCP')
                 from_TCP = os.read(self.tun_in.fileno(), 1522)
+                print('END TCP')
             except OSError as e:
                 print(bcolors.FAIL + f"Error writing to tap: {e}" + bcolors.ENDC)
             else:
@@ -67,7 +70,7 @@ class TAP_Manager:
 
             if content:
                 try:
-                    print(bcolors.WARNING + f'Read data from {path_dir}:' + bcolors.ENDC,
+                    print(bcolors.WARNING + f'Прочитанные данные из {path_dir}:' + bcolors.ENDC,
                           ' '.join('{:02x}'.format(x) for x in content))
                     tap_lock.acquire()
                     os.write(self.tun_in.fileno(), bytes(content))

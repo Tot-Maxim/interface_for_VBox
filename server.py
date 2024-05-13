@@ -30,9 +30,11 @@ class ServerProtocol:
                     (length,) = unpack('>Q', bs)
                     data = b''
                     while len(data) < length:
+                        print(length)
                         to_read = length - len(data)
                         data += connection.recv(
                             4096 if to_read > 4096 else to_read)
+                        print(len(data))
                     print(f'Receive data : {data}')
 
                     # send our 0 ack
