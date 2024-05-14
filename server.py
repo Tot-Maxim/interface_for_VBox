@@ -11,14 +11,12 @@ class ServerProtocol:
 
     def __init__(self):
         self.socket = None
-        self.output_dir = '.'
+        self.output_dir = '/home/serverside/PycharmProjects/interface_for_VBox/serv_recevie'
         self.file_num = 1
 
     def listen(self, server_ip, server_port):
         self.socket = socket(AF_INET, SOCK_STREAM)
-        print(self.socket.getsockopt(SOL_SOCKET, SO_RCVBUF))
         self.socket.bind((server_ip, server_port))
-        # self.socket.setsockopt(SOL_SOCKET, SO_RCVBUF, 25000000)
         self.socket.listen(1)
 
     def handle_images(self):
@@ -34,25 +32,20 @@ class ServerProtocol:
                     lname = connection.recv(8)
                     (lenname,) = unpack('>Q', lname)
                     name = connection.recv(lenname)
-                    print(f'Receive name: {name}')
+                    name_file = name.decode('utf-8')
 
                     data = b''
+                    print(f'File size: {length} byte')
                     while len(data) < length:
-                        print(length)
                         to_read = length - len(data)
                         data += connection.recv(
                             4096 if to_read > 4096 else to_read)
-                        print(len(data))
-                    print(f'Receive data : {data}')
-
-                    connection.sendall(b'\00')
+                    print(f'Receive data : {data}\nFile {name_file} save in {self.output_dir}')
                 finally:
                     connection.shutdown(SHUT_WR)
                     connection.close()
 
-                with open(os.path.join(
-                        self.output_dir, name.decode('utf-8')), 'wb'
-                ) as fp:
+                with open(os.path.join(self.output_dir, name.decode('utf-8')), 'wb') as fp:
                     fp.write(data)
                     print('File write success')
 
@@ -72,11 +65,17 @@ def start_server():
     print(f'Server listen {ip_address, TCP_port}')
     sp.handle_images()
 
+def center_button(event=None):
+    x_coordinate = (window.winfo_width() - start_button.winfo_reqwidth()) // 2
+    y_coordinate = (window.winfo_height() - start_button.winfo_reqheight()) // 2
+    start_button.place(x=x_coordinate, y=y_coordinate)
+
 window = Tk()
 window.geometry("820x450")
 window.configure(background='black')
 
 start_button = Button(window, text='Start server', command=start_server, bg='white', fg='black')
-start_button.pack()
+
+window.bind("<Configure>", center_button)
 
 window.mainloop()
