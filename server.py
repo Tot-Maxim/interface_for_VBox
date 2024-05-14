@@ -16,7 +16,9 @@ class ServerProtocol:
 
     def listen(self, server_ip, server_port):
         self.socket = socket(AF_INET, SOCK_STREAM)
+        print(self.socket.getsockopt(SOL_SOCKET, SO_RCVBUF))
         self.socket.bind((server_ip, server_port))
+        # self.socket.setsockopt(SOL_SOCKET, SO_RCVBUF, 25000000)
         self.socket.listen(1)
 
     def handle_images(self):
@@ -28,6 +30,12 @@ class ServerProtocol:
                     print('Input data')
                     bs = connection.recv(8)
                     (length,) = unpack('>Q', bs)
+
+                    lname = connection.recv(8)
+                    (lenname,) = unpack('>Q', lname)
+                    name = connection.recv(lenname)
+                    print(f'Receive name: {name}')
+
                     data = b''
                     while len(data) < length:
                         print(length)
@@ -37,15 +45,13 @@ class ServerProtocol:
                         print(len(data))
                     print(f'Receive data : {data}')
 
-                    # send our 0 ack
-                    assert len(b'\00') == 1
                     connection.sendall(b'\00')
                 finally:
                     connection.shutdown(SHUT_WR)
                     connection.close()
 
                 with open(os.path.join(
-                        self.output_dir, 'Copy_' + '%02d.png' % self.file_num), 'wb'
+                        self.output_dir, name.decode('utf-8')), 'wb'
                 ) as fp:
                     fp.write(data)
                     print('File write success')
