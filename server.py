@@ -40,6 +40,7 @@ class ServerProtocol:
                         to_read = length - len(data)
                         data += connection.recv(
                             4096 if to_read > 4096 else to_read)
+                        print(f'Receive data {data} / {length}')
                     print(f'File {name_file} save in {self.output_dir}')
                 finally:
                     connection.shutdown(SHUT_WR)
