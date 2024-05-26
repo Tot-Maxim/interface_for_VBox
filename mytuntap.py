@@ -51,13 +51,13 @@ class TAP_Manager:
 
         with open(path_dir, 'rb+') as file:
             content = file.read()
-            file.seek(0)
-            file.truncate()
 
-        if content:
-            try:
-                print(Bcolors.WARNING + f'Прочитанные данные из {path_dir}:' + Bcolors.ENDC,
-                      ' '.join('{:02x}'.format(x) for x in content))
-                os.write(self.tun_in.fileno(), bytes(content))
-            except OSError as e:
-                print(Bcolors.FAIL + f"Ошибка при прочтении tap интерфейса: {e}" + Bcolors.ENDC)
+            if content:
+                try:
+                    print(Bcolors.WARNING + f'Прочитанные данные из {path_dir}:' + Bcolors.ENDC,
+                          ' '.join('{:02x}'.format(x) for x in content))
+                    os.write(self.tun_in.fileno(), bytes(content))
+                    file.seek(0)
+                    file.truncate()
+                except OSError as e:
+                    print(Bcolors.FAIL + f"Ошибка при прочтении tap интерфейса: {e}" + Bcolors.ENDC)

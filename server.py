@@ -1,4 +1,5 @@
 import os
+import time
 from tkinter import *
 from socket import *
 from struct import unpack
@@ -28,6 +29,7 @@ class ServerProtocol:
                     print('Input data')
                     bs = connection.recv(8)
                     (length,) = unpack('>Q', bs)
+                    time_start = time.time()
 
                     lname = connection.recv(8)
                     (lenname,) = unpack('>Q', lname)
@@ -40,8 +42,10 @@ class ServerProtocol:
                         to_read = length - len(data)
                         data += connection.recv(
                             4096 if to_read > 4096 else to_read)
-                        print(f'Receive data {data} / {length}')
+                        print(f'Receive data {len(data)} / {length}')
+                    time_end = time.time()
                     print(f'File {name_file} save in {self.output_dir}')
+                    print(f'Time transfer: {time_end - time_start} c')
                 finally:
                     connection.shutdown(SHUT_WR)
                     connection.close()
