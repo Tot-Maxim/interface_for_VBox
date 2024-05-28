@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 from mytuntap import TAP_Manager
 import select
 import argparse
