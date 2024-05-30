@@ -61,7 +61,7 @@ class MyHandler(BaseHTTPRequestHandler):
             dst_ip = form.get('dst_ip', [''])[0]
             password = form.get('password', [''])[0]
             current_dir = form.get('file_path', [''])[0]
-            command = (f"echo {password} | sudo -S gnome-terminal --geometry=200x24 -- bash -c './daemon_tap0.py "
+            command = (f"echo {password} | sudo -S gnome-terminal --geometry=200x24 -- bash -c './daemon_tap.py "
                        f"--current_dir {current_dir} --src_ip {src_ip} --dst_ip {dst_ip}'")
             subprocess.Popen(command, shell=True)
 
