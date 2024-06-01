@@ -3,7 +3,7 @@ import os
 import struct
 import subprocess
 import serial
-import base64
+from base64 import b64decode, b64encode
 import time
 
 
@@ -12,13 +12,6 @@ class Bcolors:  # Класс с константами для цветовой �
     WARNING = '\033[93m'
     FAIL = '\033[91m'
     ENDC = '\033[0m'
-
-
-def add_padding(data):
-    missing_padding = len(data) % 4
-    if missing_padding:
-        data += b'=' * (4 - missing_padding)
-    return data
 
 
 class TAP_Manager:
@@ -48,38 +41,48 @@ class TAP_Manager:
         return self.tun_in
 
     def serial_setup(self):
-        self.ser = serial.Serial(self.serial_port, self.baud_rate)
-        return self.ser
+        try:
+            self.ser = serial.Serial(self.serial_port, self.baud_rate)
+            return self.ser
+        except Exception as e:
+            print(Bcolors.FAIL + f"Ошибка при попытке создать последовательный порт: {e}" + Bcolors.ENDC)
 
     def read_from_tcp(self):
         try:
             from_tcp = os.read(self.tun_in.fileno(), 2048)
-            print(Bcolors.WARNING + 'len_tcp:' + Bcolors.ENDC, len(from_tcp))
             return from_tcp
         except OSError as e:
-            print(Bcolors.FAIL + f"Ошибка при записи в tap интерфейс: {e}" + Bcolors.ENDC)
+            print(Bcolors.FAIL + f"Ошибка при чтении и tap интерфейса: {e}" + Bcolors.ENDC)
 
     def read_from_serial(self):
         try:
-            len_rx = self.ser.in_waiting
-            data_rx = self.ser.read(len_rx)
-            receive_base64 = base64.b64decode(add_padding(data_rx))
-            print('len_rx:', len_rx)
-            return receive_base64
+            receive_base64 = b''
+            while True:
+                data_rx = self.ser.read(1)
+                receive_base64 += data_rx
+                if data_rx == b'\x00':
+                    break
+                if data_rx == b'#':
+                    break
+
+            receive_base64 = receive_base64.rstrip(b'#')  # Remove the '#' symbol before decoding
+            decoded_data = b64decode(receive_base64)
+            return decoded_data
         except Exception as e:
             print(Bcolors.FAIL + f"Ошибка при попытке прочитать из {self.serial_port}: {e}" + Bcolors.ENDC)
 
     def write_to_tcp(self, receive_base64):
-        os.write(self.tun_in.fileno(), bytes(receive_base64))
-        print(Bcolors.WARNING + f'Записанные данные в TAP:' + Bcolors.ENDC,
-              ' '.join('{:02x}'.format(x) for x in receive_base64))
+        try:
+            os.write(self.tun_in.fileno(), bytes(receive_base64))
+            print(Bcolors.WARNING + f'Записанные данные в TAP:' + Bcolors.ENDC,
+                  ' '.join('{:02x}'.format(x) for x in receive_base64))
+        except OSError as e:
+            print(Bcolors.FAIL + f"Ошибка при попытке записать данные в TAP интерфейс: {e}" + Bcolors.ENDC)
 
     def write_to_uart(self, data_from_tcp):
         try:
-            send_base64 = base64.b64encode(data_from_tcp)
-            len_tx = self.ser.write(send_base64)
-            ts = (10 / self.baud_rate) * (len_tx + 100) * 10
-            time.sleep(ts)
+            send_base64 = b64encode(data_from_tcp) + b'#'
+            self.ser.write(send_base64)
             print(Bcolors.OKGREEN + f'Записанные данные в {self.serial_port}:' + Bcolors.ENDC,
                   ' '.join('{:02x}'.format(x) for x in data_from_tcp))
         except Exception as e:

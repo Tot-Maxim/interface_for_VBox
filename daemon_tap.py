@@ -44,6 +44,7 @@ while True:
             if buffer_uart:
                 tap_manager.write_to_tcp(buffer_uart)
                 buffer_uart.clear()
+
         elif fd == ser.fileno():
             if buffer_tcp:
                 tap_manager.write_to_uart(buffer_tcp)
