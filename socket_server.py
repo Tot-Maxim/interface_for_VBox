@@ -45,6 +45,7 @@ class ServerProtocol:
                         to_read = length_data - len(data)
                         data += connection.recv(
                             4096 if to_read > 4096 else to_read)
+                        print(len(data))
                     time_end = time.time()
                     print(f'File {name_file} save in {self.output_dir}')
                     print(f'Time transfer: {time_end - time_start} c')
