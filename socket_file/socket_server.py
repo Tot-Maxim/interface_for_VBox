@@ -8,14 +8,13 @@ import time
 parser = argparse.ArgumentParser(description='Server socket manager script')
 parser.add_argument('--port', type=int, default=5050, help='TCP port listening')
 parser.add_argument('--ip', type=str, default='10.1.1.8', help='Source IP address')
-
 args = parser.parse_args()
 
-class ServerProtocol:
 
+class ServerProtocol:
     def __init__(self):
         self.socket = None
-        self.output_dir = '/home/serverside/PycharmProjects/interface_for_VBox/serv_recevie'
+        self.output_dir = 'serv_receive'
         self.file_num = 1
 
     def listen(self, server_ip, server_port):
@@ -45,7 +44,8 @@ class ServerProtocol:
                         to_read = length_data - len(data)
                         data += connection.recv(
                             4096 if to_read > 4096 else to_read)
-                        print(len(data))
+                        percentage = (len(data) / length_data) * 100
+                        print(f"Прогресс: {percentage:.2f}%")
                     time_end = time.time()
                     print(f'File {name_file} save in {self.output_dir}')
                     print(f'Time transfer: {time_end - time_start} c')

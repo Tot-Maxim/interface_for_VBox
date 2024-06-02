@@ -4,7 +4,6 @@ import struct
 import subprocess
 import serial
 from base64 import b64decode, b64encode
-import time
 
 
 class Bcolors:  # Класс с константами для цветовой кодировки в консоли

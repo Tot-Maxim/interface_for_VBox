@@ -1,4 +1,4 @@
-html_TAP = """
+TAP_manager = """
 <!DOCTYPE html>
 <html lang='ru'>
 <head>
@@ -17,19 +17,16 @@ html_TAP = """
             text-align: left;
         }
         body {
-            background: url('back.png'), #6DB3F2;
-            margin: 0;
-            padding: 0;
+            background: url('back.png'), #365979;
             font-family: sans-serif;
             display: flex;
             justify-content: center;
             align-items: center;
             min-height: 100vh;
 
-            /* Add background image property */
-            background-repeat: no-repeat;  /* Prevent image tiling */
-            background-position: center;  /* Center the image */
-            background-size: cover;  /* Resize image to cover the entire body element */
+            background-repeat: no-repeat;
+            background-position: center;
+            background-size: cover;
         }
 
         form {
@@ -71,6 +68,9 @@ html_TAP = """
 <body>
     <div class="top-bar">
         <h1 style="color: white;">TAP Manager</h1>
+        <button style="font-size: 20px; font-weight: bold;" onclick="redirect_to_tap()">TAP MANAGER</button>
+        <button style="font-size: 20px; font-weight: bold;" onclick="redirect_to_client()">SOKET CLIENT</button>
+        <button style="font-size: 20px; font-weight: bold;" onclick="redirect_to_server()">SOCKET SERVER</button>
     </div>
     <form_input>
         <label for="src_ip">Введите IP-адрес источника:</label>
@@ -83,9 +83,20 @@ html_TAP = """
         <input type="text" id="dst_ip" name="dst_ip" value="10.1.1.7">
         <input type="password" id="password" name="password">
         <input type="text" id="serial_port" name="serial_port" value='/dev/ttyACM0'>
-        <button onclick="window.location.href='/choose'">Запуск TAP интерфейса</button>
+        <button onclick="window.location.href='/tap_manager'">Запуск TAP интерфейса</button>
     </form>
-    <div id="text_output"></div>
+    <script>
+        function redirect_to_tap() {
+            window.location.href = '/tap_manager';
+        } 
+        function redirect_to_client() {
+            window.location.href = '/socket_client';
+        } 
+        function redirect_to_server() {
+            window.location.href = '/socket_server';
+        }
+
+    </script>
 </body>
 </html>
 """
@@ -109,21 +120,30 @@ socket_client = """
             text-align: left;
         }
         body {
-            background-color: black;
-            margin: 0;
-            padding: 0;
+            background: url('back.png'), #365979;
             font-family: sans-serif;
             display: flex;
             justify-content: center;
             align-items: center;
             min-height: 100vh;
+
+            background-repeat: no-repeat;
+            background-position: center;
+            background-size: cover;
         }
 
         form {
             display: grid;
-            gap: 10px;
+            gap: 20px;
             justify-items: center;
-            margin-top: 20px;
+            margin-top: 40px;
+        }
+
+        form_input {
+            display: grid;
+            gap: 30px;
+            justify-items: left;
+            margin-top: -20px;
         }
 
         button {
@@ -149,43 +169,58 @@ socket_client = """
     </style>
 </head>
 <body>
-    <div class="top-bar">   
-        <button onclick="redirect_choose()">Вернуться назад</button>
+     <div class="top-bar">
+        <h1 style="color: white;">Soket client</h1>
+        <button style="font-size: 20px; font-weight: bold;" onclick="redirect_to_tap()">TAP MANAGER</button>
+        <button style="font-size: 20px; font-weight: bold;" onclick="redirect_to_client()">SOKET CLIENT</button>
+        <button style="font-size: 20px; font-weight: bold;" onclick="redirect_to_server()">SOCKET SERVER</button>
     </div>
-    <h1>Socket client</h1>
-    <form method="post">
+     <form_input>
         <label for="dst_ip">Введите IP-адрес сервера:</label>
-        <input type="text" id="client_ip" name="client_ip" value="10.1.1.7">
-
         <label for="port">Введите порт сервера:</label>
-        <input type="number" id="client_port" name="client_port" value=5050>
-
         <label for="file_path">Введите имя файла для передачи:</label>
+    </form_input>
+    <form method="post">
+        <input type="text" id="client_ip" name="client_ip" value="10.1.1.7">
+        <input type="number" id="client_port" name="client_port" value="5050">
         <input type="text" id="file_path" name="file_path" value='logo.png'>
-
-        <button onclick="window.location.href='/home/client/send_data'">Передать файл</button>
+        <button onclick="window.location.href='/socket_client'">Передать файл</button>
     </form>
     <script>
-        function redirect_choose() {
-            window.location.href = '/choose';
+        function redirect_to_tap() {
+            window.location.href = '/tap_manager';
+        }        
+        function redirect_to_client() {
+            window.location.href = '/socket_client';
+        }        
+        function redirect_to_server() {
+            window.location.href = '/socket_server';
         }
     </script>
 </body>
 </html>
 """
 
-choose = '''
+socket_server = """
 <!DOCTYPE html>
 <html lang='ru'>
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Socket client</title>
+    <title>TAP interface</title>
     <style>
+        .top-bar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            background-color: #5399A7;
+            padding: 10px;
+            color: white;
+            text-align: left;
+        }
         body {
-            background: url('back.png'), #6DB3F2;
-            margin: 0;
-            padding: 0;
+            background: url('back.png'), #365979;
             font-family: sans-serif;
             display: flex;
             justify-content: center;
@@ -204,14 +239,11 @@ choose = '''
             margin-top: 40px;
         }
 
-        .button-container {
-            display: flex;
-            justify-content: space-between;
-            width: 25%;
-            margin-top: 20px;
-            margin-bottom: 20px;
-            margin-left: 20px;
-            margin-right: 20px;
+        form_input {
+            display: grid;
+            gap: 30px;
+            justify-items: left;
+            margin-top: -20px;
         }
 
         button {
@@ -228,80 +260,42 @@ choose = '''
             padding: 5px;
         }
 
+        label {
+            color: white;
+            text-align: right;
+            padding-right: 10px;
+            grid-column: 1 / 2;
+        }
     </style>
 </head>
 <body>
-<div class="button-container">
-    <h1>Socket client</h1>
-    <form method="post">
+     <div class="top-bar">
+        <h1 style="color: white;">Soket server</h1>
+        <button style="font-size: 20px; font-weight: bold;" onclick="redirect_to_tap()">TAP MANAGER</button>
+        <button style="font-size: 20px; font-weight: bold;" onclick="redirect_to_client()">SOKET CLIENT</button>
+        <button style="font-size: 20px; font-weight: bold;" onclick="redirect_to_server()">SOCKET SERVER</button>
+    </div>
+    <form_input>
         <label for="dst_ip">Введите IP-адрес сервера:</label>
-        <input type="text" id="client_ip" name="client_ip" value="10.1.1.7">
-
-        <label for="port">Введите порт сервера:</label>
-        <input type="number" id="client_port" name="client_port" value="5050">
-
-        <label for="file_path">Введите имя файла для передачи:</label>
-        <input type="text" id="file_path" name="file_path" value='logo.png'>
-
-        <button onclick="window.location.href='/home/client/'">Передать файл</button>
-    </form>
-</div>
-<div class="button-container">
-    <h1>Socket server</h1>
+         <label for="dst_ip">Введите порт сервера:</label>
+    </form_input>
     <form method="post">
-        <label for="dst_ip">Введите IP-адрес сервера:</label>
         <input type="text" id="socket_ip" name="socket_ip" value="10.1.1.8">
-
-        <label for="dst_ip">Введите порт сервера:</label>
         <input type="number" id="socket_port" name="socket_port" value="5050">
-
-        <button onclick="window.location.href='/home/server'">Запуск ceрвера</button>
+        <button onclick="window.location.href='/socket_server/starting'">Запуск ceрвера</button>
     </form>
-</div>
-<script>
-    function redirect_client() {
-        window.location.href = '/home/client';
-    }
-</script>
-</body>
-</html>
-'''
-
-server_start = '''
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Server Status</title>
-  <style>
-    body {
-      background-color: #f0f0f0;
-      font-family: sans-serif;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      min-height: 100vh;
-    }
-
-    h1 {
-      color: black;
-      font-size: 3rem;
-    }
-
-    form {
-            display: grid;
-            gap: 10px;
-            justify-items: center;
-            margin-top: 20px;
+    <script>
+        function redirect_to_tap() {
+            window.location.href = '/tap_manager';
+        }        
+        function redirect_to_client() {
+            window.location.href = '/socket_client';
+        }        
+        function redirect_to_server() {
+            window.location.href = '/socket_server';
         }
-  </style>
-</head>
-<body>
-    <form>
-        <h1>Server is start</h1>
-        <progress id="progress-bar" value="{self.progress}" max="10"></progress>
-    </form>
+    </script>
 </body>
 </html>
-'''
+"""
+
